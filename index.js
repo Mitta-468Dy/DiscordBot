@@ -9,14 +9,16 @@ let evcnt = 0;
 
 client.on('ready', () => {
   console.log(`${client.user.username} でログインしています。`);
-  evbuf = fs.readFileSync("eventlist.dbt","utf-8");
+  evbuf = fs.readFileSync("./eventlist.dbt","utf-8");
   //今後修正
   //実際のデータは2個ごとに改行ではなく、全て連結だったので、
   //"\n"でのsplitは外して直に","でsplitする
-  evl = evbuf.split("\n");
-  evcnt = evl.length;
-  for(let i = 0 ; i < evl.length ; i++){
-    events[i] = evl[i].split(",");
+  evl = evbuf.split(",");
+  evcnt = Math.floor(evl.length / 2);
+  for(let i = 0 ; i < evl.length ; i += 2){
+    events[i / 2] = [];
+    events[i / 2][0] = evl[i];
+    events[i / 2][1] = evl[i + 1];
   }
   //console.log(events);
 })
@@ -25,6 +27,17 @@ client.on('message', async msg => {
   if (msg.author.bot){
     //自身の発言を無視する
     return;
+  }
+
+  //sizeがfalseに等しいとき、添付ファイルはなし
+  if (msg.attachments.size && !msg.author.bot){
+    const files = msg.attachments.map(attachment => attachment.url);
+    if(files == null){
+      //ファイルなし
+      msg.channel.send("添付されたファイルはありません");
+    }else{
+      msg.channel.send("ファイルが添付されていました。");
+    }
   }
 
   //ping
@@ -47,8 +60,7 @@ client.on('message', async msg => {
     }
     evcnt = events.length;
     //ファイルに保存
-    //保存先はWinだとusers直下 Linuxだとindex.jsと同じ階層の模様(相対パス指定で今後修正)
-    fs.writeFile("eventlist.dbt",events,function(err){
+    fs.writeFile("./eventlist.dbt",events,function(err){
       if(err) throw err;
     });
   }
@@ -109,14 +121,14 @@ client.on('message', async msg => {
   }
 })
 
-client.login("NzY5NDI5MjMxMzYwMDE2Mzk2.X5O40A.Lux3__iKuDXpWOrZ_tjykbxAZrw");
+client.login("NzY5NDI5MjMxMzYwMDE2Mzk2.X5O40A.nS4oouSbMPsYBrmTfcVezmBaafI");
 
 function lday(ds){
   let targday = new Date(ds);
   let today = new Date();
   let dif = Math.ceil((targday - today) / 86400000);            //86400000ミリ秒=1日
   if (isNaN(dif)){
-    console.log("NaN Check datas");
+    console.log("NaN error, Check datas");
     return 0;
   }else{
     return dif;
